@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cobro Bus Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <style>
+        :root { --primary: #007aff; --secondary: #34c759; --bg: #f2f2f7; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h2 { margin-top: 0; font-size: 20px; color: #1c1c1e; text-align: center; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; font-size: 14px; color: #8e8e93; margin-bottom: 5px; margin-left: 5px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #d1d1d6; border-radius: 12px; font-size: 17px; box-sizing: border-box; background: #fff; }
+        .grid-cant { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 15px; }
+        .btn-cant { background: #e5e5ea; border: none; padding: 10px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-cant.active { background: var(--primary); color: white; }
+        .metodo-selector { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn-metodo { flex: 1; padding: 10px; border: 2px solid #e5e5ea; border-radius: 12px; background: white; font-weight: 600; cursor: pointer; }
+        .btn-metodo.active { border-color: var(--primary); color: var(--primary); background: #f0f7ff; }
+        .total-box { background: #1c1c1e; color: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
+        .total-val { font-size: 32px; font-weight: bold; display: block; color: var(--secondary); }
+        #qrcode { background: white; padding: 10px; border-radius: 10px; display: inline-block; margin-top: 10px; }
+        .qr-container { text-align: center; min-height: 200px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Calculadora de Cobro</h2>
+
+    <div class="input-group">
+        <label>Precio Billete Ruta Hoy (€)</label>
+        <input type="number" id="precio" value="1.50" step="0.05" oninput="calcular()">
+    </div>
+
+    <label>¿Cuántos pasajeros?</label>
+    <div class="grid-cant" id="botonesCant">
+        <button class="btn-cant active" onclick="setCant(1, this)">1</button>
+        <button class="btn-cant" onclick="setCant(2, this)">2</button>
+        <button class="btn-cant" onclick="setCant(3, this)">3</button>
+        <button class="btn-cant" onclick="setCant(4, this)">4</button>
+        <button class="btn-cant" onclick="setCant(5, this)">5</button>
+    </div>
+
+    <div class="metodo-selector">
+        <button id="btnRev" class="btn-metodo active" onclick="setMetodo('revolut')">Revolut</button>
+        <button id="btnPay" class="btn-metodo" onclick="setMetodo('paypal')">PayPal</button>
+    </div>
+
+    <div class="total-box">
+        <span style="font-size: 14px; opacity: 0.8;">TOTAL A COBRAR</span>
+        <span class="total-val" id="displayTotal">1.50€</span>
+    </div>
+
+    <div class="qr-container">
+        <div id="qrcode"></div>
+        <p id="instruccion" style="font-size: 12px; color: #8e8e93; margin-top: 10px;">Muestra este código al pasajero</p>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURACIÓN ---
+    const USUARIO_REVOLUT = "TU_USUARIO_REVOLUT"; 
+    const USUARIO_PAYPAL = "TU_USUARIO_PAYPAL";   
+    // ----------------------
+
+    let cantidadActual = 1;
+    let metodoActual = 'revolut';
+
+    function setCant(n, btn) {
+        cantidadActual = n;
+        document.querySelectorAll('.btn-cant').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        calcular();
+    }
+
+    function setMetodo(m) {
+        metodoActual = m;
+        document.getElementById('btnRev').classList.toggle('active', m === 'revolut');
+        document.getElementById('btnPay').classList.toggle('active', m === 'paypal');
+        calcular();
+    }
+
+    function calcular() {
+        const precio = document.getElementById('precio').value || 0;
+        const total = (precio * cantidadActual).toFixed(2);
+        document.getElementById('displayTotal').innerText = total + "€";
+        
+        let url = "";
+        if(metodoActual === "revolut") {
+            url = `https://revolut.me/${USUARIO_REVOLUT}/${total}`;
+        } else {
+            url = `https://www.paypal.me/${USUARIO_PAYPAL}/${total}`;
+        }
+
+        const qrDiv = document.getElementById("qrcode");
+        qrDiv.innerHTML = "";
+        const qr = qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        qrDiv.innerHTML = qr.createImgTag(6); // Tamaño del QR
+    }
+
+    // Generar el primer QR al abrir
+    window.onload = calcular;
+</script>
+
+</body>
+</html>
